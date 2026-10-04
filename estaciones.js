@@ -226,8 +226,8 @@ export const ESTACIONES_SEMILLA = [
     "comuna": "ARICA",
     "direccion": "Valle de Azapa Km 13.5",
     "nro": "0",
-    "lat": null,
-    "lon": null
+    "lat": -18.526774,
+    "lon": -70.165578
   },
   {
     "id": "UL1510102",
