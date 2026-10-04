@@ -24,12 +24,16 @@ const S = {
   online: navigator.onLine
 };
 
+// Orden normado del letrero de precios (siempre de arriba hacia abajo).
+// Kerosene es opcional: algunas estaciones agregan una 5ta fila al final.
 const FUEL_FIELDS = [
   { campo: 'precio93', label: 'Gasolina 93' },
   { campo: 'precio95', label: 'Gasolina 95' },
   { campo: 'precio97', label: 'Gasolina 97' },
-  { campo: 'precioDiesel', label: 'Petróleo Diésel' }
+  { campo: 'precioDiesel', label: 'Petróleo Diésel' },
+  { campo: 'precioKerosene', label: 'Kerosene' }
 ];
+const FUEL_FIELDS_BASE = FUEL_FIELDS.slice(0, 4); // las 4 filas que siempre están
 
 // ===== INIT =====
 async function init() {
@@ -93,6 +97,7 @@ function nuevoRegistroVacio() {
     precio95: null,
     precio97: null,
     precioDiesel: null,
+    precioKerosene: null,
     creadoEn: new Date().toISOString()
   };
 }
@@ -169,6 +174,9 @@ function renderizarNuevoRegistro() {
     const algunPrecio = FUEL_FIELDS.some(f => r[f.campo] != null && r[f.campo] !== '');
     btnGuardar.disabled = !algunPrecio;
   }
+
+  const btnLeerTodos = document.getElementById('btn-leer-todos');
+  if (btnLeerTodos) btnLeerTodos.disabled = !r.foto;
 }
 
 async function onFotoLetrero(e) {
@@ -258,9 +266,15 @@ async function guardarRegistro() {
 }
 
 // ===== RECORTE DE FOTO + OCR (igual que en Bitácora Vehicular) =====
-// Un solo letrero suele mostrar varios precios (93/95/97/diésel); se
-// recorta cada número por separado desde la misma foto ya tomada.
+// Dos modos:
+// - 'simple': recorta un solo número (un precio) — el flujo original.
+// - 'multi': recorta el letrero completo (4 o 5 filas, en el orden
+//   normado 93/95/97/Diésel[/Kerosene]) y la app divide el recorte en
+//   franjas horizontales iguales, leyendo cada una por separado —
+//   así un error en una fila no arruina la lectura de las demás.
 const R = {
+  modo: 'simple', // 'simple' | 'multi'
+  nFilas: 4,
   campo: null,
   img: null,
   canvas: null,
@@ -272,11 +286,7 @@ const R = {
   inicioY: 0
 };
 
-function abrirRecortePrecio(campo) {
-  if (!S.registroActual.foto) {
-    toast('⚠️ Primero fotografía el letrero de precios');
-    return;
-  }
+function cargarFotoEnRecorte(onListo) {
   const img = new Image();
   img.onload = () => {
     const canvas = document.getElementById('canvas-recorte');
@@ -285,16 +295,10 @@ function abrirRecortePrecio(campo) {
     canvas.width = Math.round(img.naturalWidth * escala);
     canvas.height = Math.round(img.naturalHeight * escala);
 
-    R.campo = campo;
     R.img = img;
     R.canvas = canvas;
     R.ctx = canvas.getContext('2d');
     R.escalaMostrada = escala;
-
-    const w = canvas.width * 0.45;
-    const h = canvas.height * 0.14;
-    R.rect = { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
-    redibujarRecorte();
 
     canvas.style.touchAction = 'none';
     canvas.onpointerdown = onRecortePointerDown;
@@ -302,11 +306,68 @@ function abrirRecortePrecio(campo) {
     canvas.onpointerup = onRecortePointerUp;
     canvas.onpointercancel = onRecortePointerUp;
 
-    const label = FUEL_FIELDS.find(f => f.campo === campo)?.label || '';
-    document.getElementById('recorte-lbl').textContent = `Encierra el precio de ${label}`;
+    onListo(canvas);
     document.getElementById('overlay-recorte').classList.add('show');
   };
   img.src = S.registroActual.foto;
+}
+
+function abrirRecortePrecio(campo) {
+  if (!S.registroActual.foto) {
+    toast('⚠️ Primero fotografía el letrero de precios');
+    return;
+  }
+  R.modo = 'simple';
+  R.campo = campo;
+
+  document.getElementById('recorte-opciones-multi').style.display = 'none';
+  document.getElementById('btn-foto-completa-recorte').style.display = '';
+  document.getElementById('recorte-hd').textContent = '✂️ Marca el precio';
+
+  cargarFotoEnRecorte(canvas => {
+    const w = canvas.width * 0.45;
+    const h = canvas.height * 0.14;
+    R.rect = { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
+    redibujarRecorte();
+    const label = FUEL_FIELDS.find(f => f.campo === campo)?.label || '';
+    document.getElementById('recorte-lbl').textContent = `Encierra el precio de ${label}`;
+  });
+}
+
+function abrirRecorteMultiple() {
+  if (!S.registroActual.foto) {
+    toast('⚠️ Primero fotografía el letrero de precios');
+    return;
+  }
+  R.modo = 'multi';
+  R.campo = null;
+  R.nFilas = 4;
+
+  const chk = document.getElementById('chk-incluye-kerosene');
+  if (chk) chk.checked = false;
+  document.getElementById('recorte-opciones-multi').style.display = '';
+  document.getElementById('btn-foto-completa-recorte').style.display = 'none';
+  document.getElementById('recorte-hd').textContent = '📷 Marca el letrero completo';
+
+  cargarFotoEnRecorte(canvas => {
+    const w = canvas.width * 0.7;
+    const h = canvas.height * 0.55;
+    R.rect = { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
+    redibujarRecorte();
+    actualizarEtiquetaRecorteMultiple();
+  });
+}
+
+function actualizarEtiquetaRecorteMultiple() {
+  const nombres = FUEL_FIELDS.slice(0, R.nFilas).map(f => f.label).join(', ');
+  document.getElementById('recorte-lbl').textContent =
+    `Encierra las ${R.nFilas} filas de precios, de arriba hacia abajo: ${nombres}.`;
+}
+
+function onCambioIncluyeKerosene() {
+  const chk = document.getElementById('chk-incluye-kerosene');
+  R.nFilas = chk && chk.checked ? 5 : 4;
+  actualizarEtiquetaRecorteMultiple();
 }
 
 function redibujarRecorte() {
@@ -368,26 +429,32 @@ function onRecortePointerUp() {
   R.arrastrando = false;
 }
 
+// Recorta una subregión de R.img (en coordenadas de imagen original) y
+// la devuelve como dataURL, escalada para que el OCR trabaje cómodo.
+function recortarRegion(sx, sy, sw, sh) {
+  const destW = Math.max(sw, 500);
+  const destH = sh * (destW / sw);
+  const tmp = document.createElement('canvas');
+  tmp.width = Math.round(destW);
+  tmp.height = Math.round(Math.max(destH, 1));
+  tmp.getContext('2d').drawImage(R.img, sx, sy, sw, sh, 0, 0, tmp.width, tmp.height);
+  return tmp.toDataURL('image/png');
+}
+
 async function procesarRecorte(usarRecorte) {
   cerrarOverlay('overlay-recorte');
+
+  if (R.modo === 'multi') {
+    await procesarRecorteMultiple(usarRecorte);
+    return;
+  }
+
   const campo = R.campo;
   let dataUrlParaOCR;
 
   if (usarRecorte && R.rect && R.rect.w > 10 && R.rect.h > 10) {
     const factor = 1 / R.escalaMostrada;
-    const sx = R.rect.x * factor;
-    const sy = R.rect.y * factor;
-    const sw = R.rect.w * factor;
-    const sh = R.rect.h * factor;
-
-    const destW = Math.max(sw, 500);
-    const destH = sh * (destW / sw);
-
-    const tmp = document.createElement('canvas');
-    tmp.width = Math.round(destW);
-    tmp.height = Math.round(destH);
-    tmp.getContext('2d').drawImage(R.img, sx, sy, sw, sh, 0, 0, tmp.width, tmp.height);
-    dataUrlParaOCR = tmp.toDataURL('image/png');
+    dataUrlParaOCR = recortarRegion(R.rect.x * factor, R.rect.y * factor, R.rect.w * factor, R.rect.h * factor);
   } else {
     dataUrlParaOCR = R.img.src;
   }
@@ -400,6 +467,42 @@ async function procesarRecorte(usarRecorte) {
   } else {
     toast('⚠️ No se pudo leer automáticamente — ingresa el precio a mano');
   }
+  renderizarNuevoRegistro();
+  actualizarBotonGuardar();
+}
+
+// Lee de una sola vez las N filas de precios del letrero (93/95/97/Diésel
+// y, si corresponde, Kerosene), dividiendo el recorte completo en franjas
+// horizontales iguales y aplicando el OCR a cada una por separado.
+async function procesarRecorteMultiple(usarRecorte) {
+  const factor = 1 / R.escalaMostrada;
+  let sx, sy, sw, sh;
+  if (usarRecorte && R.rect && R.rect.w > 10 && R.rect.h > 10) {
+    sx = R.rect.x * factor; sy = R.rect.y * factor;
+    sw = R.rect.w * factor; sh = R.rect.h * factor;
+  } else {
+    sx = 0; sy = 0; sw = R.img.naturalWidth; sh = R.img.naturalHeight;
+  }
+
+  const nFilas = R.nFilas;
+  const campos = FUEL_FIELDS.slice(0, nFilas);
+  const bandH = sh / nFilas;
+  let leidos = 0;
+
+  for (let i = 0; i < nFilas; i++) {
+    toast(`🔎 Leyendo fila ${i + 1}/${nFilas}: ${campos[i].label}…`, 1400);
+    const dataUrlFila = recortarRegion(sx, sy + i * bandH, sw, bandH);
+    const ocr = await leerOdometroDesdeDataUrl(dataUrlFila);
+    if (ocr.ok) {
+      S.registroActual[campos[i].campo] = ocr.valor;
+      leidos++;
+    }
+    renderizarNuevoRegistro();
+  }
+
+  toast(leidos === nFilas
+    ? `✅ ${leidos} precios leídos — revisa que estén correctos`
+    : `⚠️ ${leidos}/${nFilas} precios leídos — completa a mano los que falten`);
   renderizarNuevoRegistro();
   actualizarBotonGuardar();
 }
@@ -549,6 +652,8 @@ window.accion = {
   onPrecioManual,
   guardarRegistro,
   abrirRecortePrecio,
+  abrirRecorteMultiple,
+  onCambioIncluyeKerosene,
   confirmarRecorte: () => procesarRecorte(true),
   usarFotoCompletaRecorte: () => procesarRecorte(false),
   geocodificarPendientes,

@@ -23,7 +23,7 @@ function construirWorkbook(registros) {
   filas.push([]);
   filas.push([
     'Fecha', 'Hora', 'ID Estación', 'Marca', 'Dirección', 'Comuna',
-    'Gasolina 93', 'Gasolina 95', 'Gasolina 97', 'Petróleo Diésel',
+    'Gasolina 93', 'Gasolina 95', 'Gasolina 97', 'Petróleo Diésel', 'Kerosene',
     'Distancia GPS a estación (m)'
   ]);
 
@@ -31,7 +31,7 @@ function construirWorkbook(registros) {
     filas.push([
       r.fecha || '', r.hora || '', r.estacionId || '', r.estacionLogo || '',
       r.estacionDireccion || '', r.estacionComuna || '',
-      r.precio93 || '', r.precio95 || '', r.precio97 || '', r.precioDiesel || '',
+      r.precio93 || '', r.precio95 || '', r.precio97 || '', r.precioDiesel || '', r.precioKerosene || '',
       (r.distanciaEstacionM != null) ? Math.round(r.distanciaEstacionM) : ''
     ]);
   }
@@ -39,11 +39,11 @@ function construirWorkbook(registros) {
   const ws = XLSX.utils.aoa_to_sheet(filas);
   ws['!cols'] = [
     { wch: 11 }, { wch: 8 }, { wch: 13 }, { wch: 14 }, { wch: 30 }, { wch: 10 },
-    { wch: 13 }, { wch: 13 }, { wch: 13 }, { wch: 15 }, { wch: 14 }
+    { wch: 13 }, { wch: 13 }, { wch: 13 }, { wch: 15 }, { wch: 11 }, { wch: 14 }
   ];
   ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } }
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } }
   ];
   XLSX.utils.book_append_sheet(wb, ws, 'Precios Combustible');
   return wb;

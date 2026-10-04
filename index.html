@@ -59,6 +59,10 @@
 
     <p class="text-sm text-muted fw-600" style="margin-bottom:.6rem;">💲 Precios (ingresa los que muestre el letrero)</p>
 
+    <button class="btn btn-primary btn-sm" onclick="accion.abrirRecorteMultiple()" style="margin-bottom:.875rem;" disabled id="btn-leer-todos">
+      📷 Leer todos los precios de una vez
+    </button>
+
     <div class="field">
       <label>Gasolina 93</label>
       <div style="display:flex; gap:8px;">
@@ -85,6 +89,13 @@
       <div style="display:flex; gap:8px;">
         <input type="number" id="inp-precioDiesel" placeholder="$" oninput="onPrecioManual('precioDiesel')" style="flex:1;">
         <button class="btn btn-ghost btn-icon" onclick="accion.abrirRecortePrecio('precioDiesel')" title="Leer de la foto">✂️</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Kerosene (si el letrero lo muestra)</label>
+      <div style="display:flex; gap:8px;">
+        <input type="number" id="inp-precioKerosene" placeholder="$" oninput="onPrecioManual('precioKerosene')" style="flex:1;">
+        <button class="btn btn-ghost btn-icon" onclick="accion.abrirRecortePrecio('precioKerosene')" title="Leer de la foto">✂️</button>
       </div>
     </div>
 
@@ -141,15 +152,21 @@
 <!-- ===== OVERLAY: RECORTE DE PRECIO ===== -->
 <div class="overlay" id="overlay-recorte">
   <div class="sheet" style="max-width:480px;">
-    <div class="sheet-hd">✂️ Marca el precio</div>
+    <div class="sheet-hd" id="recorte-hd">✂️ Marca el precio</div>
     <div class="sheet-body" id="recorte-lbl">
       Arrastra sobre la foto para encerrar solo ese número.
+    </div>
+    <div id="recorte-opciones-multi" style="display:none; margin-bottom:.6rem;">
+      <label style="display:flex; align-items:center; gap:8px; font-size:.9rem;">
+        <input type="checkbox" id="chk-incluye-kerosene" onchange="accion.onCambioIncluyeKerosene()">
+        El letrero también muestra Kerosene (5 filas)
+      </label>
     </div>
     <div style="margin-bottom:.75rem;">
       <canvas id="canvas-recorte" style="width:100%; display:block; border-radius:10px; background:#000;"></canvas>
     </div>
-    <button class="btn btn-primary" onclick="accion.confirmarRecorte()">✅ Usar este recorte</button>
-    <button class="btn btn-ghost btn-sm" onclick="accion.usarFotoCompletaRecorte()" style="margin-top:.5rem;">Usar foto completa (sin recortar)</button>
+    <button class="btn btn-primary" id="btn-confirmar-recorte" onclick="accion.confirmarRecorte()">✅ Usar este recorte</button>
+    <button class="btn btn-ghost btn-sm" id="btn-foto-completa-recorte" onclick="accion.usarFotoCompletaRecorte()" style="margin-top:.5rem;">Usar foto completa (sin recortar)</button>
   </div>
 </div>
 
