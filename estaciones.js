@@ -64,8 +64,8 @@ export const ESTACIONES_SEMILLA = [
     "comuna": "ARICA",
     "direccion": "Panamericana Sur",
     "nro": "2824",
-    "lat": null,
-    "lon": null
+    "lat": -18.493495,
+    "lon": -70.288923
   },
   {
     "id": "CO1510103",
