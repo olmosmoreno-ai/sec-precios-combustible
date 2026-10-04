@@ -8,7 +8,14 @@ import { exportarExcel } from './sync.js';
 import { geocodificarDireccion, obtenerGPS, estacionMasCercana } from './geo.js';
 import { ESTACIONES_SEMILLA } from './estaciones.js';
 
-const UMBRAL_MATCH_M = 40; // distancia máxima para asociar automáticamente una estación
+const UMBRAL_MATCH_M = 40; // distancia máxima (m) para asociar automáticamente una estación
+// Algunas estaciones tienen otra muy cerca (ej. dos COPEC en Diego Portales,
+// una autoservicio y una normal). Para esos casos, la estación puede traer
+// su propio "radioM" en estaciones.js, más estricto que el umbral general,
+// así no se confunden entre sí. Si no trae radioM, se usa UMBRAL_MATCH_M.
+function umbralDe(estacion) {
+  return (estacion && estacion.radioM != null) ? estacion.radioM : UMBRAL_MATCH_M;
+}
 
 // ===== ESTADO GLOBAL =====
 const S = {
@@ -179,7 +186,7 @@ async function onFotoLetrero(e) {
     S.registroActual.gpsLat = coords.lat;
     S.registroActual.gpsLon = coords.lon;
     const match = estacionMasCercana(coords.lat, coords.lon, S.estaciones);
-    if (match && match.distancia <= UMBRAL_MATCH_M) {
+    if (match && match.distancia <= umbralDe(match.estacion)) {
       aplicarEstacion(match.estacion, match.distancia, false);
       toast(`✅ Estación detectada: ${match.estacion.logo}`);
     } else {

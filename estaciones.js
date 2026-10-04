@@ -47,7 +47,8 @@ export const ESTACIONES_SEMILLA = [
     "direccion": "Av. Diego Portales",
     "nro": "1072",
     "lat": -18.4732869,
-    "lon": -70.3030846
+    "lon": -70.3030846,
+    "radioM": 20
   },
   {
     "id": "CO1510101",
@@ -92,7 +93,8 @@ export const ESTACIONES_SEMILLA = [
     "direccion": "Diego Portales",
     "nro": "1115",
     "lat": -18.4822471,
-    "lon": -70.2949345
+    "lon": -70.2949345,
+    "radioM": 20
   },
   {
     "id": "CO1510106",
