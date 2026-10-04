@@ -46,8 +46,8 @@ export const ESTACIONES_SEMILLA = [
     "comuna": "ARICA",
     "direccion": "Av. Diego Portales",
     "nro": "1072",
-    "lat": -18.4732869,
-    "lon": -70.3030846,
+    "lat": -18.473709,
+    "lon": -70.303526,
     "radioM": 20
   },
   {
@@ -92,8 +92,8 @@ export const ESTACIONES_SEMILLA = [
     "comuna": "ARICA",
     "direccion": "Diego Portales",
     "nro": "1115",
-    "lat": -18.4822471,
-    "lon": -70.2949345,
+    "lat": -18.473712,
+    "lon": -70.302539,
     "radioM": 20
   },
   {
