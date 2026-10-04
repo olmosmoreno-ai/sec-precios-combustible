@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Precios Combustible SEC</title>
+<meta name="theme-color" content="#003366">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+
+<!-- ===== TOPBAR ===== -->
+<div class="topbar">
+  <div class="tb-logo">SEC</div>
+  <div class="tb-info">
+    <div class="tb-title">Precios Combustible</div>
+    <div class="tb-sub">Superintendencia de Electricidad y Combustibles</div>
+  </div>
+  <div class="tb-right">
+    <div class="conn-pill online" id="conn-pill">
+      <span class="conn-dot"></span>
+      <span id="conn-txt">Online</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PÁGINA: NUEVO REGISTRO ══════════ -->
+<div class="page active" id="page-registro">
+
+  <div class="card">
+    <div class="card-hd">Nuevo registro</div>
+    <p class="text-sm text-muted" style="margin-bottom:.5rem;" id="reg-fecha-hora">—</p>
+
+    <p class="text-sm text-muted fw-600" style="margin-bottom:.4rem;">📷 Foto del letrero de precios</p>
+    <div class="foto-area" onclick="document.getElementById('file-letrero').click()">
+      <input type="file" id="file-letrero" accept="image/*" capture="environment" onchange="onFotoLetrero(event)" style="display:none">
+      <div id="ph-letrero" class="foto-placeholder">
+        <div class="fp-icon">📷</div>
+        <p>Fotografiar letrero</p>
+        <span>Toca para abrir cámara</span>
+      </div>
+      <img id="preview-letrero" alt="Foto letrero" style="display:none;">
+    </div>
+
+    <div class="divider"></div>
+
+    <div id="estacion-detectada"></div>
+
+    <div class="field">
+      <select id="sel-estacion-manual" onchange="onSeleccionEstacionManual()">
+        <option value="">— Elegir estación manualmente —</option>
+      </select>
+    </div>
+
+    <div class="divider"></div>
+
+    <p class="text-sm text-muted fw-600" style="margin-bottom:.6rem;">💲 Precios (ingresa los que muestre el letrero)</p>
+
+    <div class="field">
+      <label>Gasolina 93</label>
+      <div style="display:flex; gap:8px;">
+        <input type="number" id="inp-precio93" placeholder="$" oninput="onPrecioManual('precio93')" style="flex:1;">
+        <button class="btn btn-ghost btn-icon" onclick="accion.abrirRecortePrecio('precio93')" title="Leer de la foto">✂️</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Gasolina 95</label>
+      <div style="display:flex; gap:8px;">
+        <input type="number" id="inp-precio95" placeholder="$" oninput="onPrecioManual('precio95')" style="flex:1;">
+        <button class="btn btn-ghost btn-icon" onclick="accion.abrirRecortePrecio('precio95')" title="Leer de la foto">✂️</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Gasolina 97</label>
+      <div style="display:flex; gap:8px;">
+        <input type="number" id="inp-precio97" placeholder="$" oninput="onPrecioManual('precio97')" style="flex:1;">
+        <button class="btn btn-ghost btn-icon" onclick="accion.abrirRecortePrecio('precio97')" title="Leer de la foto">✂️</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Petróleo Diésel</label>
+      <div style="display:flex; gap:8px;">
+        <input type="number" id="inp-precioDiesel" placeholder="$" oninput="onPrecioManual('precioDiesel')" style="flex:1;">
+        <button class="btn btn-ghost btn-icon" onclick="accion.abrirRecortePrecio('precioDiesel')" title="Leer de la foto">✂️</button>
+      </div>
+    </div>
+
+    <button class="btn btn-success mt-1" id="btn-guardar-registro" onclick="accion.guardarRegistro()" disabled>
+      💾 Guardar registro
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ PÁGINA: ESTACIONES ══════════ -->
+<div class="page" id="page-estaciones">
+  <div class="card">
+    <div class="card-hd flex-between">
+      <span>Estaciones</span>
+      <button class="btn btn-ghost btn-sm" onclick="accion.abrirNuevaEstacion()">+ Agregar</button>
+    </div>
+    <button class="btn btn-primary btn-sm" id="btn-geocodificar" onclick="accion.geocodificarPendientes()" style="margin-bottom:.875rem;">
+      📡 Geocodificar pendientes
+    </button>
+    <div id="estaciones-lista"></div>
+  </div>
+  <p class="text-sm text-muted" style="text-align:center; padding:.5rem 0 1rem;">
+    La geocodificación convierte la dirección en coordenadas (gratis, vía OpenStreetMap) para detectar la estación automáticamente por GPS.
+  </p>
+</div>
+
+<!-- ══════════ PÁGINA: HISTORIAL ══════════ -->
+<div class="page" id="page-historial">
+  <div class="card">
+    <div class="card-hd flex-between">
+      <span>Registros</span>
+      <button class="btn btn-ghost btn-sm" onclick="accion.exportarTodo()">⬇️ Excel</button>
+    </div>
+    <div id="historial-lista"></div>
+  </div>
+</div>
+
+<!-- ===== NAV BOTTOM ===== -->
+<nav class="nav-bottom">
+  <button class="nav-btn active" id="nav-registro" onclick="mostrarPagina('registro')">
+    <span class="nb-icon">⛽</span>
+    <span>Registrar</span>
+  </button>
+  <button class="nav-btn" id="nav-estaciones" onclick="mostrarPagina('estaciones')">
+    <span class="nb-icon">📍</span>
+    <span>Estaciones</span>
+  </button>
+  <button class="nav-btn" id="nav-historial" onclick="mostrarPagina('historial')">
+    <span class="nb-icon">📊</span>
+    <span>Historial</span>
+  </button>
+</nav>
+
+<!-- ===== OVERLAY: RECORTE DE PRECIO ===== -->
+<div class="overlay" id="overlay-recorte">
+  <div class="sheet" style="max-width:480px;">
+    <div class="sheet-hd">✂️ Marca el precio</div>
+    <div class="sheet-body" id="recorte-lbl">
+      Arrastra sobre la foto para encerrar solo ese número.
+    </div>
+    <div style="margin-bottom:.75rem;">
+      <canvas id="canvas-recorte" style="width:100%; display:block; border-radius:10px; background:#000;"></canvas>
+    </div>
+    <button class="btn btn-primary" onclick="accion.confirmarRecorte()">✅ Usar este recorte</button>
+    <button class="btn btn-ghost btn-sm" onclick="accion.usarFotoCompletaRecorte()" style="margin-top:.5rem;">Usar foto completa (sin recortar)</button>
+  </div>
+</div>
+
+<!-- ===== OVERLAY: NUEVA ESTACIÓN ===== -->
+<div class="overlay" id="overlay-nueva-estacion">
+  <div class="sheet">
+    <div class="sheet-hd">+ Agregar estación</div>
+    <div class="field">
+      <label>Marca / Logo</label>
+      <input type="text" id="inp-est-logo" placeholder="Ej: COPEC, SHELL, SIN BANDERA...">
+    </div>
+    <div class="field">
+      <label>Dirección</label>
+      <input type="text" id="inp-est-direccion" placeholder="Ej: Av. Diego Portales">
+    </div>
+    <div class="field">
+      <label>Número</label>
+      <input type="text" id="inp-est-nro" placeholder="Ej: 1072">
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="accion.usarGPSParaNuevaEstacion()">📍 Usar mi ubicación actual (si estoy ahí)</button>
+    <p class="text-sm text-muted" id="est-gps-nota" style="margin:.4rem 0;"></p>
+    <button class="btn btn-success mt-1" onclick="accion.guardarNuevaEstacion()">✅ Guardar estación</button>
+    <button class="btn btn-ghost" onclick="cerrarOverlay('overlay-nueva-estacion')" style="margin-top:.5rem;">Cancelar</button>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js');
+    });
+  }
+</script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
